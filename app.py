@@ -111,7 +111,8 @@ def montar_renda_fixa_df(summary_json: dict):
     ).dt.tz_localize(None)
 
     base_cols = ['accountingGroupCode', 'issuer', 'yield', 'referenceIndexValue', 'referenceIndexName', 'maturityDate']
-    join_cols = ['acquisitionDate', 'initialInvestmentValue']
+    print(acquisition_df.columns)
+    join_cols = ['acquisitionDate', 'initialInvestmentValue', 'grossValue', 'netValue']
     renda_fixa_df = summary_df[base_cols].join(acquisition_df[join_cols], how='inner').sort_values(['maturityDate', 'acquisitionDate'])
 
     renda_fixa_df['referenceIndexValue'] = renda_fixa_df['referenceIndexValue'].astype(float)
@@ -124,12 +125,14 @@ def montar_renda_fixa_df(summary_json: dict):
         'acquisitionDate': 'Início',
         'issuer': 'Nome',
         'initialInvestmentValue': 'ValorAplicado',
+        'grossValue': 'ValorBruto',
+        'netValue': 'ValorLiquido',
         'yield': 'Taxa',
         'referenceIndexValue': 'PosFixado',
         'referenceIndexName': 'Índice',
         'maturityDate': 'Vencimento'
     })
-    renda_fixa_df = renda_fixa_df[['Tipo', 'Início', 'Nome', 'ValorAplicado', 'Taxa', 'PosFixado', 'Índice', 'Vencimento']]
+    renda_fixa_df = renda_fixa_df[['Tipo', 'Início', 'Nome', 'ValorAplicado', 'ValorBruto', 'ValorLiquido', 'Taxa', 'PosFixado', 'Índice', 'Vencimento']]
     if 'PosFixado' in renda_fixa_df.columns:
         renda_fixa_df['PosFixado'] = renda_fixa_df['PosFixado'] / 100
 
