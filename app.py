@@ -221,14 +221,12 @@ def montar_series_correcoes(titulos: pd.DataFrame, INTERPOLAR: bool, venc_ano_ma
         correcao = None
 
         # Pré-fixado: taxa diária 365
-        if pd.notnull(row.Taxa):
+        col_indice = row._asdict().get("Índice")
+        if col_indice == 'PRE':
             indice = idx[(idx >= row.Início) & (idx < row.Vencimento)]
             correcao_pre = pd.Series((1 + row.Taxa / 100) ** (1 / 365), index=indice).cumprod()
             correcao = correcao_pre.to_frame(name=row.Index)
-
-        # Pós-fixado (CDI/IPCA)
-        col_indice = row._asdict().get("Índice")
-        if pd.notnull(col_indice) and col_indice != 'PRE':
+        else: # Pós-fixado (CDI/IPCA)
             serie = series[col_indice].loc[row.Início: row.Vencimento].copy()
             correcao_pos = serie.rename(columns={"value": row.Index})
             correcao_pos[row.Index] = (correcao_pos[row.Index].cumprod() - 1) * row.PosFixado + 1
