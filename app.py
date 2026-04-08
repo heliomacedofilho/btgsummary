@@ -286,7 +286,17 @@ def montar_series_correcoes(titulos: pd.DataFrame, INTERPOLAR: bool, venc_ano_ma
     else:
         curvas_por_emissor = pd.DataFrame(columns=["index_x", "Emissor", "value"])
 
-    return titulos, series, correcoes, vencimentos_df, curvas_por_emissor
+    data_base = pd.Timestamp.today()
+    taxa_anual = 0.171
+    base_dias = 365
+    pico_df = curvas_por_emissor.loc[curvas_por_emissor.groupby("Emissor")["value"].idxmax(), ["Emissor", "index_x", "value"]]
+    slot_disponivel = pico_df.assign(
+        index_x=lambda d: pd.to_datetime(d["index_x"]),
+        anos=lambda d: (d["index_x"] - data_base).dt.days / 365,
+        slot_disponivel=lambda d: (250_000 - d["value"]) / (1 + taxa) ** d["anos"]
+    ).sort_values('slot_disponivel', ascending=True).set_index(['Emissor'])[['slot_disponivel']]
+
+    return titulos, series, correcoes, vencimentos_df, curvas_por_emissor, slot_disponivel
 
 def baixar_excel(renda_fixa_df, vencimentos_df=None):
     """Gera Excel em memória com aba RendaFixa (e opcionalmente Vencimentos)."""
@@ -320,7 +330,7 @@ if uploaded_file is not None:
 
             # --- Correções e gráfico por emissor (dias corridos) ---
             with st.spinner("Calculando correções (CDI/IPCA) e preparando gráfico..."):
-                titulos, series, correcoes, vencimentos_df, curvas_por_emissor = montar_series_correcoes(
+                titulos, series, correcoes, vencimentos_df, curvas_por_emissor, slot_disponivel = montar_series_correcoes(
                     renda_fixa_df, INTERPOLAR, venc_ano_max
                 )
 
@@ -336,6 +346,9 @@ if uploaded_file is not None:
                     fig_emissor.add_hline(y=250_000, line_width=3, line_dash="dash", line_color="red")
                     fig_emissor.update_layout(autosize=True)
                     st.plotly_chart(fig_emissor, use_container_width=True)
+
+                    st.success("✅ Slots disponíveis para investir (considerando Limite FGC)!")
+                    st.dataframe(slot_disponivel, use_container_width=True)
                 else:
                     st.info("Não há dados para desenhar curvas por emissor.")
         else:
