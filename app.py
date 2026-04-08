@@ -293,7 +293,7 @@ def montar_series_correcoes(titulos: pd.DataFrame, INTERPOLAR: bool, venc_ano_ma
     slot_disponivel = pico_df.assign(
         index_x=lambda d: pd.to_datetime(d["index_x"]),
         anos=lambda d: (d["index_x"] - data_base).dt.days / 365,
-        slot_disponivel=lambda d: (250_000 - d["value"]) / (1 + taxa) ** d["anos"]
+        slot_disponivel=lambda d: (250_000 - d["value"]) / (1 + taxa_anual) ** d["anos"]
     ).sort_values('slot_disponivel', ascending=True).set_index(['Emissor'])[['slot_disponivel']]
 
     return titulos, series, correcoes, vencimentos_df, curvas_por_emissor, slot_disponivel
